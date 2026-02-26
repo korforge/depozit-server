@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package files;
+
+option go_package = "./protobufs;protobufs";
+
+import "google/protobuf/empty.proto";
+
+
+service FilesService {
+
+   rpc UploadBinary(UploadBinaryRequest) returns (google.protobuf.Empty) {}
+
+   rpc Read(ReadDeleteRequest) returns (ReadResponse) {}
+
+   rpc Delete(ReadDeleteRequest) returns (google.protobuf.Empty) {}
+
+   rpc List(ListRequest) returns (ListResponse) {}
+
+   rpc Rename(RenameRequest) returns (google.protobuf.Empty) {}
+
+   rpc CreateContainer(ContainerRequest) returns (google.protobuf.Empty) {}
+
+   rpc RenameContainer(RenameRequest) returns (google.protobuf.Empty) {}
+
+   rpc DeleteContainer(ContainerRequest) returns (google.protobuf.Empty) {}
+}
+
+message UploadBinaryRequest {
+  string name = 1;
+  bytes data = 2;
+  bool overwrite = 3;
+}
+
+message ReadResponse {
+  bytes data = 1;
+}
+
+message ReadDeleteRequest {
+  string name = 1;
+}
+
+message ListRequest {
+  string prefix = 1;
+}
+
+message ListResponse {
+  repeated string names = 1;
+}
+
+
+message RenameRequest {
+  string oldName = 1;
+  string newName = 2;
+}
+
+
+message ContainerRequest {
+  string name = 1;
+}
+
