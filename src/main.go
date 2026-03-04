@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"depozit-server/src/config"
+	"depozit-server/src/fileio"
 	pb "depozit-server/src/protobufs"
 	"depozit-server/src/resources"
 )
@@ -60,7 +61,9 @@ func (s *server) List(ctx context.Context, req *pb.ListRequest) (*pb.ListRespons
 func (s *server) CreateContainer(ctx context.Context, req *pb.ContainerRequest) (*emptypb.Empty, error) {
 	config.Logger.Info("CreateContainer", req.Name)
 
-	err := resources.CreateContainer(req.Name, s.cfg.Permission)
+	dir := fileio.Directories{}
+
+	err := resources.CreateContainer(dir, req.Name, s.cfg.Permission)
 
 	if err != nil {
 		return nil, err
@@ -74,7 +77,9 @@ func (s *server) CreateContainer(ctx context.Context, req *pb.ContainerRequest) 
 func (s *server) DeleteContainer(ctx context.Context, req *pb.ContainerRequest) (*emptypb.Empty, error) {
 	config.Logger.Info("DeleteContainer", req.Name)
 
-	err := resources.DeleteContainer(req.Name)
+	dir := fileio.Directories{}
+
+	err := resources.DeleteContainer(dir, req.Name)
 
 	if err != nil {
 		return nil, err
@@ -88,7 +93,9 @@ func (s *server) DeleteContainer(ctx context.Context, req *pb.ContainerRequest) 
 func (s *server) RenameContainer(ctx context.Context, req *pb.RenameRequest) (*emptypb.Empty, error) {
 	config.Logger.Info("RenameContainer called", "old_name", req.OldName, "new_name", req.NewName)
 
-	err := resources.RenameContainer(req.OldName, req.NewName)
+	dir := fileio.Directories{}
+
+	err := resources.RenameContainer(dir, req.OldName, req.NewName)
 
 	if err != nil {
 		return nil, err
