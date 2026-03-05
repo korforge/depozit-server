@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v3.21.12
-// source: protobufs/files.proto
+// source: src/protobufs/files.proto
 
 package protobufs
 
@@ -384,5 +384,5 @@ var FilesService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "protobufs/files.proto",
+	Metadata: "src/protobufs/files.proto",
 }

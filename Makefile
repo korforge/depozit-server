@@ -4,10 +4,10 @@ PATH := $(PATH):$(GOBIN)
 .PHONY: build start
 
 protobufs:
-	@protoc --go_out=./microfs --go-grpc_out=./microfs protobufs/files.proto
+	@protoc --go_out=./src --go-grpc_out=./src src/protobufs/files.proto
 
 compile:
-	@go build -o ../releases/depozit-server .
+	@go build -o ../releases/depozit-server ./src
 
 install-dev:
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest

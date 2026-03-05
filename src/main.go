@@ -21,29 +21,29 @@ type server struct {
 }
 
 func (s *server) UploadBinary(ctx context.Context, req *pb.UploadBinaryRequest) (*emptypb.Empty, error) {
-	config.Logger.Info("Create file", req.Name)
+	config.Logger.Info("Create file", req.RemotePath)
 
 	fop := resources.FileOperations{}
 
-	resp, err := resources.CreateFile(&fop, s.cfg.DefaultContainer, req.Name, req.Data, s.cfg.Permission, req.Overwrite)
+	resp, err := resources.CreateFile(&fop, s.cfg.DefaultContainer, req.RemotePath, req.Data, s.cfg.Permission, req.Overwrite)
 
 	return resp, err
 }
 
 func (s *server) Read(ctx context.Context, req *pb.ReadDeleteRequest) (*pb.ReadResponse, error) {
-	config.Logger.Info("Read file", req.Name)
+	config.Logger.Info("Read file", req.RemotePath)
 
 	fop := resources.FileOperations{}
 
-	data, err := resources.ReadFile(&fop, s.cfg.DefaultContainer, req.Name)
+	data, err := resources.ReadFile(&fop, s.cfg.DefaultContainer, req.RemotePath)
 
 	return &pb.ReadResponse{Data: data}, err
 }
 
 func (s *server) Delete(ctx context.Context, req *pb.ReadDeleteRequest) (*emptypb.Empty, error) {
-	config.Logger.Info("Delete file", req.Name)
+	config.Logger.Info("Delete file", req.RemotePath)
 
-	resp, err := resources.DeleteFile(s.cfg.DefaultContainer, req.Name)
+	resp, err := resources.DeleteFile(s.cfg.DefaultContainer, req.RemotePath)
 
 	return resp, err
 }
@@ -55,7 +55,7 @@ func (s *server) List(ctx context.Context, req *pb.ListRequest) (*pb.ListRespons
 		return nil, err
 	}
 
-	return &pb.ListResponse{Names: result}, nil
+	return &pb.ListResponse{RemotePaths: result}, nil
 }
 
 func (s *server) CreateContainer(ctx context.Context, req *pb.ContainerRequest) (*emptypb.Empty, error) {
@@ -91,11 +91,11 @@ func (s *server) DeleteContainer(ctx context.Context, req *pb.ContainerRequest) 
 }
 
 func (s *server) RenameContainer(ctx context.Context, req *pb.RenameRequest) (*emptypb.Empty, error) {
-	config.Logger.Info("RenameContainer called", "old_name", req.OldName, "new_name", req.NewName)
+	config.Logger.Info("RenameContainer called", "old_name", req.RemotePath, "new_name", req.NewName)
 
 	dir := fileio.Directories{}
 
-	err := resources.RenameContainer(dir, req.OldName, req.NewName)
+	err := resources.RenameContainer(dir, req.RemotePath, req.NewName)
 
 	if err != nil {
 		return nil, err
@@ -119,7 +119,9 @@ func runServer(cfg *config.Config) {
 
 	pb.RegisterFilesServiceServer(grpcServer, &server{cfg: cfg})
 
-	resources.CreateContainer(filepath.Join(cfg.StoragePath, cfg.DefaultContainer), cfg.Permission)
+	dir := fileio.Directories{}
+
+	resources.CreateContainer(dir, filepath.Join(cfg.StoragePath, cfg.DefaultContainer), cfg.Permission)
 
 	config.Logger.Info("Server running on :" + cfg.Port)
 

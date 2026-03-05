@@ -75,7 +75,8 @@ func ListFiles(container string, prefix string) ([]string, error) {
 		}
 
 		if !d.IsDir() && strings.Contains(path, prefix) {
-			result = append(result, path)
+			result_path := strings.Replace(path, container+"/", "", 1)
+			result = append(result, result_path)
 		}
 
 		return nil

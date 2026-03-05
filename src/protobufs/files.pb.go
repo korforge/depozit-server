@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v3.21.12
-// source: protobufs/files.proto
+// source: src/protobufs/files.proto
 
 package protobufs
 
@@ -24,7 +24,7 @@ const (
 
 type UploadBinaryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	RemotePath    string                 `protobuf:"bytes,1,opt,name=remotePath,proto3" json:"remotePath,omitempty"`
 	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 	Overwrite     bool                   `protobuf:"varint,3,opt,name=overwrite,proto3" json:"overwrite,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -33,7 +33,7 @@ type UploadBinaryRequest struct {
 
 func (x *UploadBinaryRequest) Reset() {
 	*x = UploadBinaryRequest{}
-	mi := &file_protobufs_files_proto_msgTypes[0]
+	mi := &file_src_protobufs_files_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *UploadBinaryRequest) String() string {
 func (*UploadBinaryRequest) ProtoMessage() {}
 
 func (x *UploadBinaryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_protobufs_files_proto_msgTypes[0]
+	mi := &file_src_protobufs_files_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,12 +58,12 @@ func (x *UploadBinaryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadBinaryRequest.ProtoReflect.Descriptor instead.
 func (*UploadBinaryRequest) Descriptor() ([]byte, []int) {
-	return file_protobufs_files_proto_rawDescGZIP(), []int{0}
+	return file_src_protobufs_files_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *UploadBinaryRequest) GetName() string {
+func (x *UploadBinaryRequest) GetRemotePath() string {
 	if x != nil {
-		return x.Name
+		return x.RemotePath
 	}
 	return ""
 }
@@ -91,7 +91,7 @@ type ReadResponse struct {
 
 func (x *ReadResponse) Reset() {
 	*x = ReadResponse{}
-	mi := &file_protobufs_files_proto_msgTypes[1]
+	mi := &file_src_protobufs_files_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -103,7 +103,7 @@ func (x *ReadResponse) String() string {
 func (*ReadResponse) ProtoMessage() {}
 
 func (x *ReadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_protobufs_files_proto_msgTypes[1]
+	mi := &file_src_protobufs_files_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -116,7 +116,7 @@ func (x *ReadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadResponse.ProtoReflect.Descriptor instead.
 func (*ReadResponse) Descriptor() ([]byte, []int) {
-	return file_protobufs_files_proto_rawDescGZIP(), []int{1}
+	return file_src_protobufs_files_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ReadResponse) GetData() []byte {
@@ -128,14 +128,14 @@ func (x *ReadResponse) GetData() []byte {
 
 type ReadDeleteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	RemotePath    string                 `protobuf:"bytes,1,opt,name=remotePath,proto3" json:"remotePath,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReadDeleteRequest) Reset() {
 	*x = ReadDeleteRequest{}
-	mi := &file_protobufs_files_proto_msgTypes[2]
+	mi := &file_src_protobufs_files_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -147,7 +147,7 @@ func (x *ReadDeleteRequest) String() string {
 func (*ReadDeleteRequest) ProtoMessage() {}
 
 func (x *ReadDeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_protobufs_files_proto_msgTypes[2]
+	mi := &file_src_protobufs_files_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -160,12 +160,12 @@ func (x *ReadDeleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadDeleteRequest.ProtoReflect.Descriptor instead.
 func (*ReadDeleteRequest) Descriptor() ([]byte, []int) {
-	return file_protobufs_files_proto_rawDescGZIP(), []int{2}
+	return file_src_protobufs_files_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ReadDeleteRequest) GetName() string {
+func (x *ReadDeleteRequest) GetRemotePath() string {
 	if x != nil {
-		return x.Name
+		return x.RemotePath
 	}
 	return ""
 }
@@ -179,7 +179,7 @@ type ListRequest struct {
 
 func (x *ListRequest) Reset() {
 	*x = ListRequest{}
-	mi := &file_protobufs_files_proto_msgTypes[3]
+	mi := &file_src_protobufs_files_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -191,7 +191,7 @@ func (x *ListRequest) String() string {
 func (*ListRequest) ProtoMessage() {}
 
 func (x *ListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_protobufs_files_proto_msgTypes[3]
+	mi := &file_src_protobufs_files_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -204,7 +204,7 @@ func (x *ListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRequest.ProtoReflect.Descriptor instead.
 func (*ListRequest) Descriptor() ([]byte, []int) {
-	return file_protobufs_files_proto_rawDescGZIP(), []int{3}
+	return file_src_protobufs_files_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ListRequest) GetPrefix() string {
@@ -216,14 +216,14 @@ func (x *ListRequest) GetPrefix() string {
 
 type ListResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Names         []string               `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
+	RemotePaths   []string               `protobuf:"bytes,1,rep,name=remotePaths,proto3" json:"remotePaths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListResponse) Reset() {
 	*x = ListResponse{}
-	mi := &file_protobufs_files_proto_msgTypes[4]
+	mi := &file_src_protobufs_files_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -235,7 +235,7 @@ func (x *ListResponse) String() string {
 func (*ListResponse) ProtoMessage() {}
 
 func (x *ListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_protobufs_files_proto_msgTypes[4]
+	mi := &file_src_protobufs_files_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -248,19 +248,19 @@ func (x *ListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListResponse.ProtoReflect.Descriptor instead.
 func (*ListResponse) Descriptor() ([]byte, []int) {
-	return file_protobufs_files_proto_rawDescGZIP(), []int{4}
+	return file_src_protobufs_files_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ListResponse) GetNames() []string {
+func (x *ListResponse) GetRemotePaths() []string {
 	if x != nil {
-		return x.Names
+		return x.RemotePaths
 	}
 	return nil
 }
 
 type RenameRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OldName       string                 `protobuf:"bytes,1,opt,name=oldName,proto3" json:"oldName,omitempty"`
+	RemotePath    string                 `protobuf:"bytes,1,opt,name=remotePath,proto3" json:"remotePath,omitempty"`
 	NewName       string                 `protobuf:"bytes,2,opt,name=newName,proto3" json:"newName,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -268,7 +268,7 @@ type RenameRequest struct {
 
 func (x *RenameRequest) Reset() {
 	*x = RenameRequest{}
-	mi := &file_protobufs_files_proto_msgTypes[5]
+	mi := &file_src_protobufs_files_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -280,7 +280,7 @@ func (x *RenameRequest) String() string {
 func (*RenameRequest) ProtoMessage() {}
 
 func (x *RenameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_protobufs_files_proto_msgTypes[5]
+	mi := &file_src_protobufs_files_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -293,12 +293,12 @@ func (x *RenameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenameRequest.ProtoReflect.Descriptor instead.
 func (*RenameRequest) Descriptor() ([]byte, []int) {
-	return file_protobufs_files_proto_rawDescGZIP(), []int{5}
+	return file_src_protobufs_files_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *RenameRequest) GetOldName() string {
+func (x *RenameRequest) GetRemotePath() string {
 	if x != nil {
-		return x.OldName
+		return x.RemotePath
 	}
 	return ""
 }
@@ -319,7 +319,7 @@ type ContainerRequest struct {
 
 func (x *ContainerRequest) Reset() {
 	*x = ContainerRequest{}
-	mi := &file_protobufs_files_proto_msgTypes[6]
+	mi := &file_src_protobufs_files_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -331,7 +331,7 @@ func (x *ContainerRequest) String() string {
 func (*ContainerRequest) ProtoMessage() {}
 
 func (x *ContainerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_protobufs_files_proto_msgTypes[6]
+	mi := &file_src_protobufs_files_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -344,7 +344,7 @@ func (x *ContainerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContainerRequest.ProtoReflect.Descriptor instead.
 func (*ContainerRequest) Descriptor() ([]byte, []int) {
-	return file_protobufs_files_proto_rawDescGZIP(), []int{6}
+	return file_src_protobufs_files_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ContainerRequest) GetName() string {
@@ -354,25 +354,31 @@ func (x *ContainerRequest) GetName() string {
 	return ""
 }
 
-var File_protobufs_files_proto protoreflect.FileDescriptor
+var File_src_protobufs_files_proto protoreflect.FileDescriptor
 
-const file_protobufs_files_proto_rawDesc = "" +
+const file_src_protobufs_files_proto_rawDesc = "" +
 	"\n" +
-	"\x15protobufs/files.proto\x12\x05files\x1a\x1bgoogle/protobuf/empty.proto\"[\n" +
-	"\x13UploadBinaryRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x19src/protobufs/files.proto\x12\x05files\x1a\x1bgoogle/protobuf/empty.proto\"g\n" +
+	"\x13UploadBinaryRequest\x12\x1e\n" +
+	"\n" +
+	"remotePath\x18\x01 \x01(\tR\n" +
+	"remotePath\x12\x12\n" +
 	"\x04data\x18\x02 \x01(\fR\x04data\x12\x1c\n" +
 	"\toverwrite\x18\x03 \x01(\bR\toverwrite\"\"\n" +
 	"\fReadResponse\x12\x12\n" +
-	"\x04data\x18\x01 \x01(\fR\x04data\"'\n" +
-	"\x11ReadDeleteRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"%\n" +
+	"\x04data\x18\x01 \x01(\fR\x04data\"3\n" +
+	"\x11ReadDeleteRequest\x12\x1e\n" +
+	"\n" +
+	"remotePath\x18\x01 \x01(\tR\n" +
+	"remotePath\"%\n" +
 	"\vListRequest\x12\x16\n" +
-	"\x06prefix\x18\x01 \x01(\tR\x06prefix\"$\n" +
-	"\fListResponse\x12\x14\n" +
-	"\x05names\x18\x01 \x03(\tR\x05names\"C\n" +
-	"\rRenameRequest\x12\x18\n" +
-	"\aoldName\x18\x01 \x01(\tR\aoldName\x12\x18\n" +
+	"\x06prefix\x18\x01 \x01(\tR\x06prefix\"0\n" +
+	"\fListResponse\x12 \n" +
+	"\vremotePaths\x18\x01 \x03(\tR\vremotePaths\"I\n" +
+	"\rRenameRequest\x12\x1e\n" +
+	"\n" +
+	"remotePath\x18\x01 \x01(\tR\n" +
+	"remotePath\x12\x18\n" +
 	"\anewName\x18\x02 \x01(\tR\anewName\"&\n" +
 	"\x10ContainerRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name2\x87\x04\n" +
@@ -387,19 +393,19 @@ const file_protobufs_files_proto_rawDesc = "" +
 	"\x0fDeleteContainer\x12\x17.files.ContainerRequest\x1a\x16.google.protobuf.Empty\"\x00B\x17Z\x15./protobufs;protobufsb\x06proto3"
 
 var (
-	file_protobufs_files_proto_rawDescOnce sync.Once
-	file_protobufs_files_proto_rawDescData []byte
+	file_src_protobufs_files_proto_rawDescOnce sync.Once
+	file_src_protobufs_files_proto_rawDescData []byte
 )
 
-func file_protobufs_files_proto_rawDescGZIP() []byte {
-	file_protobufs_files_proto_rawDescOnce.Do(func() {
-		file_protobufs_files_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_protobufs_files_proto_rawDesc), len(file_protobufs_files_proto_rawDesc)))
+func file_src_protobufs_files_proto_rawDescGZIP() []byte {
+	file_src_protobufs_files_proto_rawDescOnce.Do(func() {
+		file_src_protobufs_files_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_src_protobufs_files_proto_rawDesc), len(file_src_protobufs_files_proto_rawDesc)))
 	})
-	return file_protobufs_files_proto_rawDescData
+	return file_src_protobufs_files_proto_rawDescData
 }
 
-var file_protobufs_files_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
-var file_protobufs_files_proto_goTypes = []any{
+var file_src_protobufs_files_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_src_protobufs_files_proto_goTypes = []any{
 	(*UploadBinaryRequest)(nil), // 0: files.UploadBinaryRequest
 	(*ReadResponse)(nil),        // 1: files.ReadResponse
 	(*ReadDeleteRequest)(nil),   // 2: files.ReadDeleteRequest
@@ -409,7 +415,7 @@ var file_protobufs_files_proto_goTypes = []any{
 	(*ContainerRequest)(nil),    // 6: files.ContainerRequest
 	(*emptypb.Empty)(nil),       // 7: google.protobuf.Empty
 }
-var file_protobufs_files_proto_depIdxs = []int32{
+var file_src_protobufs_files_proto_depIdxs = []int32{
 	0, // 0: files.FilesService.UploadBinary:input_type -> files.UploadBinaryRequest
 	2, // 1: files.FilesService.Read:input_type -> files.ReadDeleteRequest
 	2, // 2: files.FilesService.Delete:input_type -> files.ReadDeleteRequest
@@ -433,26 +439,26 @@ var file_protobufs_files_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_protobufs_files_proto_init() }
-func file_protobufs_files_proto_init() {
-	if File_protobufs_files_proto != nil {
+func init() { file_src_protobufs_files_proto_init() }
+func file_src_protobufs_files_proto_init() {
+	if File_src_protobufs_files_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_protobufs_files_proto_rawDesc), len(file_protobufs_files_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_src_protobufs_files_proto_rawDesc), len(file_src_protobufs_files_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_protobufs_files_proto_goTypes,
-		DependencyIndexes: file_protobufs_files_proto_depIdxs,
-		MessageInfos:      file_protobufs_files_proto_msgTypes,
+		GoTypes:           file_src_protobufs_files_proto_goTypes,
+		DependencyIndexes: file_src_protobufs_files_proto_depIdxs,
+		MessageInfos:      file_src_protobufs_files_proto_msgTypes,
 	}.Build()
-	File_protobufs_files_proto = out.File
-	file_protobufs_files_proto_goTypes = nil
-	file_protobufs_files_proto_depIdxs = nil
+	File_src_protobufs_files_proto = out.File
+	file_src_protobufs_files_proto_goTypes = nil
+	file_src_protobufs_files_proto_depIdxs = nil
 }
