@@ -7,7 +7,7 @@ protobufs:
 	@protoc --go_out=./src --go-grpc_out=./src src/protobufs/files.proto
 
 compile:
-	@go build -o ../releases/depozit-server ./src
+	@go build -o depozit-server ./src
 
 install-dev:
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -15,7 +15,7 @@ install-dev:
 	@sudo apt install -y protobuf-compiler
 
 start:
-	@go run ./src --port 5051 --root-api-key=123456 --storage-path=./data
+	@go run ./src -env test.env
 
 test:
 	@go test -v ./tests/...
