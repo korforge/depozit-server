@@ -10,7 +10,7 @@ compile:
 	@go build -o depozit-server ./src
 
 install: compile
-	@bash depozit.sh
+	@bash install.sh
 
 install-dev:
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
