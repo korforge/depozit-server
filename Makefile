@@ -1,13 +1,16 @@
 GOBIN := $(shell go env GOPATH)/bin
 PATH := $(PATH):$(GOBIN)
 
-.PHONY: build start
+.PHONY: build start install
 
 protobufs:
 	@protoc --go_out=./src --go-grpc_out=./src src/protobufs/files.proto
 
 compile:
 	@go build -o depozit-server ./src
+
+install: compile
+	@bash depozit.sh
 
 install-dev:
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest

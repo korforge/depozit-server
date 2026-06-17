@@ -1,156 +1,116 @@
 #!/bin/bash
 
-# Depozit Server Management Script
-# This script manages the installation and uninstallation of the depozit-server systemd service.
+# Depozit Server Installer
+# Installs without root. Requires: systemd (user session), openssl.
 
 set -e
 
-# Configuration
-USER="depozit"
-GROUP="depozit"
-BIN_DIR="/opt/depozit"
-CONF_DIR="/etc/depozit"
-STORAGE_DIR="/var/lib/depozit"
-BINARY_NAME="depozit-server"
-SERVICE_FILE="/etc/systemd/system/depozit.service"
-ENV_FILE="$CONF_DIR/.env"
+BIN_DIR="$HOME/.local/bin"
+CONFIG_DIR="$HOME/.depozit"
+STORAGE_DIR="$HOME/.depozit/storage"
+SYSTEMD_DIR="$HOME/.config/systemd/user"
+ENV_FILE="$CONFIG_DIR/.env"
+SERVICE_FILE="$SYSTEMD_DIR/depozit.service"
 SERVICE_NAME="depozit"
+SERVER_BINARY="depozit-server"
+CLI_BINARY="depozit"
 
-# Check if running as root
-if [ "$EUID" -ne 0 ]; then
-  echo "Please run as root (use sudo)"
-  exit 1
-fi
+# Resolve script directory so install can be run from anywhere
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 install() {
-    echo "--- Starting Depozit Server Installation ---"
+    echo "--- Installing Depozit ---"
 
-    # 1. Create System User
-    if ! id "$USER" >/dev/null 2>&1; then
-        echo "Creating system user: $USER"
-        useradd -r -s /bin/false "$USER"
-    else
-        echo "User $USER already exists."
+    # Check for the compiled server binary
+    if [ ! -f "$SCRIPT_DIR/$SERVER_BINARY" ]; then
+        echo "Error: $SERVER_BINARY not found in $SCRIPT_DIR"
+        echo "Build it first with: go build -o $SERVER_BINARY ./src"
+        exit 1
     fi
 
-    # 2. Prepare Directories
-    echo "Preparing directories..."
+    # Check for the CLI binary
+    if [ ! -f "$SCRIPT_DIR/$CLI_BINARY" ]; then
+        echo "Error: $CLI_BINARY not found in $SCRIPT_DIR"
+        exit 1
+    fi
+
+    # Check systemd user session is available
+    if ! systemctl --user status >/dev/null 2>&1; then
+        echo "Error: systemd user session is not available."
+        echo "Make sure you are logged in as a regular user with a running session."
+        exit 1
+    fi
+
+    echo "Creating directories..."
     mkdir -p "$BIN_DIR"
-    mkdir -p "$CONF_DIR"
+    mkdir -p "$CONFIG_DIR"
     mkdir -p "$STORAGE_DIR"
+    mkdir -p "$SYSTEMD_DIR"
 
-    # 3. Copy Binary (if available in current directory)
-    if [ -f "./$BINARY_NAME" ]; then
-        echo "Copying binary to $BIN_DIR"
-        cp "./$BINARY_NAME" "$BIN_DIR/"
-        chmod +x "$BIN_DIR/$BINARY_NAME"
-    else
-        echo "Warning: $BINARY_NAME not found in current directory. Please copy it to $BIN_DIR later."
-    fi
+    echo "Installing binaries to $BIN_DIR..."
+    cp "$SCRIPT_DIR/$SERVER_BINARY" "$BIN_DIR/$SERVER_BINARY"
+    cp "$SCRIPT_DIR/$CLI_BINARY" "$BIN_DIR/$CLI_BINARY"
+    chmod +x "$BIN_DIR/$SERVER_BINARY"
+    chmod +x "$BIN_DIR/$CLI_BINARY"
 
-    # 4. Initialize .env file if it doesn't exist
     if [ ! -f "$ENV_FILE" ]; then
-        echo "Initializing default .env file in $ENV_FILE"
-        cat <<EOF > "$ENV_FILE"
+        echo "Creating default config at $ENV_FILE..."
+        cat > "$ENV_FILE" <<EOF
 PORT=50051
 ROOT_API_KEY=$(openssl rand -hex 32)
 STORAGE_PATH=$STORAGE_DIR
 CONTAINER=default
 EOF
-        echo "IMPORTANT: A random ROOT_API_KEY has been generated in $ENV_FILE"
-        echo "WARNING: Keep this file secure. Permissions will be set to 600."
-    else
-        echo ".env file already exists at $ENV_FILE. Skipping initialization."
-    fi
-
-    # 5. Set Permissions
-    echo "Setting permissions..."
-    chown -R "$USER:$GROUP" "$BIN_DIR"
-    chown -R "$USER:$GROUP" "$STORAGE_DIR"
-    chown -R "$USER:$GROUP" "$CONF_DIR"
-
-    if [ -f "$ENV_FILE" ]; then
         chmod 600 "$ENV_FILE"
-        chown "$USER:$GROUP" "$ENV_FILE"
+        echo "IMPORTANT: A random ROOT_API_KEY has been generated."
+    else
+        echo "Config already exists at $ENV_FILE, skipping."
     fi
 
-    chmod 700 "$CONF_DIR"
-    chmod 700 "$STORAGE_DIR"
-
-    # 6. Create Systemd Service File
-    echo "Creating systemd service file..."
-    cat <<EOF > "$SERVICE_FILE"
+    echo "Creating systemd user service..."
+    cat > "$SERVICE_FILE" <<EOF
 [Unit]
 Description=Depozit Server
 After=network.target
 
 [Service]
 Type=simple
-User=$USER
-Group=$GROUP
-WorkingDirectory=$BIN_DIR
-ExecStart=$BIN_DIR/$BINARY_NAME -env $ENV_FILE
+ExecStart=$BIN_DIR/$SERVER_BINARY -env $ENV_FILE
 Restart=always
 RestartSec=5
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 EOF
 
-    # 7. Enable and Start Service
-    echo "Enabling and starting $SERVICE_NAME service..."
-    systemctl daemon-reload
-    systemctl enable "$SERVICE_NAME"
+    systemctl --user daemon-reload
+    systemctl --user enable "$SERVICE_NAME"
+    systemctl --user start "$SERVICE_NAME"
 
-    if [ -f "$BIN_DIR/$BINARY_NAME" ] && [ -f "$ENV_FILE" ]; then
-        systemctl start "$SERVICE_NAME"
-        echo "Service started successfully."
-    else
-        echo "Configuration or binary missing. Please ensure both are present and then start the service manually."
-    fi
+    # Add ~/.local/bin to PATH in shell rc files if not already present
+    _ensure_path
 
-    printf "\n--- Installation Complete ---"
-    if [ -f "$ENV_FILE" ]; then
-        echo "ROOT_API_KEY: $(grep 'ROOT_API_KEY=' "$ENV_FILE" | cut -d'=' -f2)"
-    fi
-    echo "Binary location: $BIN_DIR/$BINARY_NAME"
-    echo "Config location: $ENV_FILE (Permissions: 600)"
-    echo "Storage location: $STORAGE_DIR"
-    echo "Check status with: systemctl status $SERVICE_NAME"
+    echo ""
+    echo "--- Installation Complete ---"
+    echo "ROOT_API_KEY: $(grep 'ROOT_API_KEY=' "$ENV_FILE" | cut -d'=' -f2)"
+    echo "Port:         $(grep 'PORT=' "$ENV_FILE" | cut -d'=' -f2)"
+    echo "Storage:      $STORAGE_DIR"
+    echo "Config:       $ENV_FILE"
+    echo ""
+    echo "Manage with: depozit {start|stop|status|uninstall}"
+    echo "(You may need to open a new terminal for 'depozit' to be on PATH.)"
 }
 
-uninstall() {
-    echo "--- Starting Depozit Server Uninstallation ---"
-
-    echo "Stopping and disabling service..."
-    systemctl stop "$SERVICE_NAME" || true
-    systemctl disable "$SERVICE_NAME" || true
-
-    echo "Killing any remaining processes for user $USER..."
-    pkill -u "$USER" || true
-    sleep 2
-
-    echo "Removing systemd service file..."
-    rm -f "$SERVICE_FILE"
-    systemctl daemon-reload
-
-    echo "Removing binary and configuration..."
-    rm -rf "$BIN_DIR"
-    rm -rf "$CONF_DIR"
-
-    echo "Removing system user: $USER"
-    if id "$USER" >/dev/null 2>&1; then
-        userdel -f "$USER"
-    fi
-
-    echo "--- Uninstallation Complete ---"
+_ensure_path() {
+    local line='export PATH="$HOME/.local/bin:$PATH"'
+    for rc in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
+        if [ -f "$rc" ] && ! grep -qF '.local/bin' "$rc"; then
+            echo "" >> "$rc"
+            echo "# Added by depozit installer" >> "$rc"
+            echo "$line" >> "$rc"
+            echo "Added $BIN_DIR to PATH in $rc"
+        fi
+    done
 }
 
-case "$1" in
-    uninstall)
-        uninstall
-        ;;
-    install|*)
-        install
-        ;;
-esac
+install

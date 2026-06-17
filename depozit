@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Depozit service management CLI
+
+CONFIG_DIR="$HOME/.depozit"
+ENV_FILE="$CONFIG_DIR/.env"
+SERVICE_NAME="depozit"
+BIN_DIR="$HOME/.local/bin"
+
+_read_env() {
+    grep "^${1}=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2-
+}
+
+case "$1" in
+    start)
+        if systemctl --user is-active --quiet "$SERVICE_NAME"; then
+            echo "Depozit is already running."
+            exit 0
+        fi
+        systemctl --user start "$SERVICE_NAME"
+        echo "Depozit service started."
+        ;;
+
+    stop)
+        if ! systemctl --user is-active --quiet "$SERVICE_NAME"; then
+            echo "Depozit is not running."
+            exit 0
+        fi
+        systemctl --user stop "$SERVICE_NAME"
+        echo "Depozit service stopped."
+        ;;
+
+    status)
+        if systemctl --user is-active --quiet "$SERVICE_NAME"; then
+            STATUS="running"
+        else
+            STATUS="stopped"
+        fi
+        PORT=$(_read_env PORT)
+        STORAGE=$(_read_env STORAGE_PATH)
+        echo "Service: $STATUS"
+        echo "Port:    ${PORT:-not configured}"
+        echo "Storage: ${STORAGE:-not configured}"
+        ;;
+
+    uninstall)
+        echo "--- Uninstalling Depozit ---"
+
+        STORAGE=$(_read_env STORAGE_PATH)
+
+        systemctl --user stop "$SERVICE_NAME" 2>/dev/null || true
+        systemctl --user disable "$SERVICE_NAME" 2>/dev/null || true
+        rm -f "$HOME/.config/systemd/user/${SERVICE_NAME}.service"
+        systemctl --user daemon-reload 2>/dev/null || true
+
+        rm -f "$BIN_DIR/depozit-server"
+        rm -f "$BIN_DIR/depozit"
+        rm -rf "$CONFIG_DIR"
+
+        echo ""
+        echo "Depozit has been uninstalled."
+        echo ""
+        echo "Your storage files were NOT removed."
+        echo "To delete them, run:"
+        echo "  rm -rf ${STORAGE:-$HOME/.local/share/depozit}"
+        ;;
+
+    *)
+        echo "Usage: depozit {start|stop|status|uninstall}"
+        exit 1
+        ;;
+esac

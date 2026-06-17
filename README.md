@@ -2,26 +2,44 @@
 
 A secure gRPC file storage server.
 
-## Installation
+## Install
 
-The easiest way to install is using the management script:
-
-```bash
-sudo ./depozit.sh
-```
-
-You can see server configuration on .env file.
-```bash
-cat /etc/depozit/.env
-```
-
-
-To uninstall:
+Build and install (no root required):
 
 ```bash
-sudo ./depozit.sh uninstall
-sudo rm -rf /var/lib/depozit
+make install
 ```
 
-**IMPORTANT**
-The `uninstall` command **does not** remove your stored files. If you want to delete all data, you must manually remove the storage directory: `sudo rm -rf /var/lib/depozit`
+This compiles the server, installs both binaries to `~/.local/bin`, creates a config at `~/.depozit/.env` with a generated API key, and starts the service via systemd.
+
+> If `depozit` is not found after install, open a new terminal or run `source ~/.bashrc`.
+
+## Usage
+
+```bash
+depozit start      # start the service
+depozit stop       # stop the service
+depozit status     # show status, port, and storage path
+depozit uninstall  # remove everything except stored files
+```
+
+## Config
+
+```bash
+cat ~/.depozit/.env
+```
+
+| Variable        | Description                        |
+|-----------------|------------------------------------|
+| `PORT`          | gRPC port (default `50051`)        |
+| `ROOT_API_KEY`  | API key generated on first install |
+| `STORAGE_PATH`  | Directory where files are stored   |
+| `CONTAINER`     | Default container name             |
+
+## Uninstall
+
+```bash
+depozit uninstall
+```
+
+The uninstall command removes the service, binaries, and config. **Stored files are not deleted.** The command will print the storage path so you can remove it manually if needed.
