@@ -58,13 +58,21 @@ install() {
         cat > "$ENV_FILE" <<EOF
 PORT=50051
 ROOT_API_KEY=$(openssl rand -hex 32)
+ENCRYPTION_KEY=$(openssl rand -hex 32)
 STORAGE_PATH=$STORAGE_DIR
-CONTAINER=default
 EOF
         chmod 600 "$ENV_FILE"
-        echo "IMPORTANT: A random ROOT_API_KEY has been generated."
+        echo "IMPORTANT: A random ROOT_API_KEY and ENCRYPTION_KEY have been generated."
+        echo "Back up ENCRYPTION_KEY. Stored files cannot be decrypted without it."
     else
         echo "Config already exists at $ENV_FILE, skipping."
+
+        # Configs created before encryption was added have no key
+        if ! grep -q '^ENCRYPTION_KEY=' "$ENV_FILE"; then
+            echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$ENV_FILE"
+            chmod 600 "$ENV_FILE"
+            echo "IMPORTANT: Added a random ENCRYPTION_KEY to $ENV_FILE. Back it up."
+        fi
     fi
 
     echo "Creating systemd user service..."
@@ -97,7 +105,7 @@ EOF
     echo "Storage:      $STORAGE_DIR"
     echo "Config:       $ENV_FILE"
     echo ""
-    echo "Manage with: depozit {start|stop|status|uninstall}"
+    echo "Manage with: depozit {start|stop|status|containers|uninstall}"
     echo "(You may need to open a new terminal for 'depozit' to be on PATH.)"
 }
 

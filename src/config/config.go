@@ -5,19 +5,23 @@ import (
 )
 
 type Config struct {
-	Port             string
-	APIKey           string
-	DefaultContainer string
-	StoragePath      string
-	Permission       os.FileMode
+	Host                string
+	Port                string
+	APIKey              string
+	StoragePath         string
+	EncryptionKey       []byte
+	Permission          os.FileMode
+	DirectoryPermission os.FileMode
 }
 
-func LoadConfig(Port string, rootApiKey string, defaultContainer string, storagePath string) *Config {
+func LoadConfig(host string, port string, rootApiKey string, storagePath string, encryptionKey []byte) *Config {
 	return &Config{
-		Port:             Port,
-		APIKey:           rootApiKey,
-		DefaultContainer: defaultContainer,
-		StoragePath:      storagePath,
-		Permission:       0755,
+		Host:                host,
+		Port:                port,
+		APIKey:              rootApiKey,
+		EncryptionKey:       encryptionKey,
+		StoragePath:         storagePath,
+		Permission:          0600,
+		DirectoryPermission: 0700,
 	}
 }

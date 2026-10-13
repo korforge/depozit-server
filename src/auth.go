@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/subtle"
 	"depozit-server/src/config"
 
 	"google.golang.org/grpc"
@@ -30,7 +31,7 @@ func AuthInterceptor(cfg *config.Config) grpc.UnaryServerInterceptor {
 
 		token := tokens[0]
 
-		if token != cfg.APIKey {
+		if subtle.ConstantTimeCompare([]byte(token), []byte(cfg.APIKey)) != 1 {
 			return nil, status.Error(codes.Unauthenticated, "invalid api-key")
 		}
 

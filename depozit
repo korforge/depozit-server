@@ -44,9 +44,24 @@ case "$1" in
         ;;
 
     uninstall)
-        echo "--- Uninstalling Depozit ---"
+        if [ ! -f "$BIN_DIR/depozit-server" ] && [ ! -f "$HOME/.config/systemd/user/${SERVICE_NAME}.service" ]; then
+            echo "Depozit is not installed."
+            exit 0
+        fi
 
         STORAGE=$(_read_env STORAGE_PATH)
+
+        if [ -n "$(_read_env ENCRYPTION_KEY)" ]; then
+            echo "WARNING: $ENV_FILE holds ENCRYPTION_KEY and will be deleted."
+            echo "Stored files cannot be decrypted without it. Back it up first."
+            read -r -p "Continue? [y/N] " ANSWER
+            if [ "$ANSWER" != "y" ] && [ "$ANSWER" != "Y" ]; then
+                echo "Aborted."
+                exit 1
+            fi
+        fi
+
+        echo "--- Uninstalling Depozit ---"
 
         systemctl --user stop "$SERVICE_NAME" 2>/dev/null || true
         systemctl --user disable "$SERVICE_NAME" 2>/dev/null || true

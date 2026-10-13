@@ -19,7 +19,10 @@ This compiles the server, installs both binaries to `~/.local/bin`, creates a co
 ```bash
 depozit start      # start the service
 depozit stop       # stop the service
-depozit status     # show status, port, and storage path
+depozit status     # show status, port, storage path, and container count
+depozit containers                 # list containers
+depozit containers create <name>   # create a container
+depozit containers delete <name>   # delete a container and its files (asks for confirmation)
 depozit uninstall  # remove everything except stored files
 ```
 
@@ -31,10 +34,13 @@ cat ~/.depozit/.env
 
 | Variable        | Description                        |
 |-----------------|------------------------------------|
-| `PORT`          | gRPC port (default `50051`)        |
+| `HOST`          | Bind address (default `0.0.0.0`)   |
+| `PORT`          | gRPC port (required; installer sets `50051`) |
 | `ROOT_API_KEY`  | API key generated on first install |
+| `ENCRYPTION_KEY`| 64 hex chars key used to encrypt stored files. Back it up |
 | `STORAGE_PATH`  | Directory where files are stored   |
-| `CONTAINER`     | Default container name             |
+
+Each container is a directory inside `STORAGE_PATH`. The `default` container is created on startup and is used when a request does not set `container`.
 
 ## Uninstall
 

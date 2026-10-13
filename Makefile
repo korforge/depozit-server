@@ -1,7 +1,7 @@
 GOBIN := $(shell go env GOPATH)/bin
 PATH := $(PATH):$(GOBIN)
 
-.PHONY: build start install
+.PHONY: protobufs compile install install-dev start test coverage
 
 protobufs:
 	@protoc --go_out=./src --go-grpc_out=./src src/protobufs/files.proto
@@ -9,8 +9,12 @@ protobufs:
 compile:
 	@go build -o depozit-server ./src
 
-install: compile
-	@bash install.sh
+install:
+	@if [ -f "$(HOME)/.local/bin/depozit-server" ]; then \
+		echo "Depozit is already installed. Run 'depozit uninstall' first."; \
+	else \
+		$(MAKE) --no-print-directory compile && bash install.sh; \
+	fi
 
 install-dev:
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -18,11 +22,12 @@ install-dev:
 	@sudo apt install -y protobuf-compiler
 
 start:
+	@mkdir -p data
 	@go run ./src -env test.env
 
 test:
-	@go test -v ./tests/...
+	@go test -v ./...
 
 coverage:
-	@go test ./tests/... -coverpkg=./... -coverprofile=coverage.out
+	@go test ./... -coverpkg=./... -coverprofile=coverage.out
 	@go tool cover -func=coverage.out

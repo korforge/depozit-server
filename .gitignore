@@ -1,3 +1,7 @@
 data/*
 default/*
 coverage.out
+certs/*
+test.env
+depozit-server
+review.md
