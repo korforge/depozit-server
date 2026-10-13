@@ -68,10 +68,20 @@ EOF
         echo "Config already exists at $ENV_FILE, skipping."
 
         # Configs created before encryption was added have no key
-        if ! grep -q '^ENCRYPTION_KEY=' "$ENV_FILE"; then
+        local key
+        key=$(grep '^ENCRYPTION_KEY=' "$ENV_FILE" | cut -d'=' -f2- | tr -d "\"'" || true)
+
+        if [ -z "$key" ]; then
+            # Drop an empty "ENCRYPTION_KEY=" line before adding the new key
+            sed -i '/^ENCRYPTION_KEY=/d' "$ENV_FILE"
             echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" >> "$ENV_FILE"
             chmod 600 "$ENV_FILE"
             echo "IMPORTANT: Added a random ENCRYPTION_KEY to $ENV_FILE. Back it up."
+        elif ! [[ "$key" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            # Never replace an existing key: files encrypted with it would become unreadable
+            echo "Error: ENCRYPTION_KEY in $ENV_FILE must be 64 hex chars (32 bytes)."
+            echo "Fix it manually. Generate a new key with: openssl rand -hex 32"
+            exit 1
         fi
     fi
 
@@ -104,6 +114,9 @@ EOF
     echo "Port:         $(grep 'PORT=' "$ENV_FILE" | cut -d'=' -f2)"
     echo "Storage:      $STORAGE_DIR"
     echo "Config:       $ENV_FILE"
+    echo ""
+    echo "ENCRYPTION_KEY is stored in $ENV_FILE. Back it up: stored files cannot be"
+    echo "decrypted without it, and 'depozit uninstall' deletes that file."
     echo ""
     echo "Manage with: depozit {start|stop|status|containers|uninstall}"
     echo "(You may need to open a new terminal for 'depozit' to be on PATH.)"
