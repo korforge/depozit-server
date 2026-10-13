@@ -118,7 +118,7 @@ EOF
     echo "ENCRYPTION_KEY is stored in $ENV_FILE. Back it up: stored files cannot be"
     echo "decrypted without it, and 'depozit uninstall' deletes that file."
     echo ""
-    echo "Manage with: depozit {start|stop|status|containers|uninstall}"
+    echo "Manage with: depozit {start|stop|status|uninstall}"
     echo "(You may need to open a new terminal for 'depozit' to be on PATH.)"
 }
 
