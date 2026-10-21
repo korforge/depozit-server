@@ -15,7 +15,7 @@ REPO="${DEPOZIT_REPO:-korforge/depozit-server}"
 # Branch downloaded when the script runs without the repo files next to it, as with curl | bash.
 # A piped script cannot see its own URL, so the pre-push hook sets this to the pushed branch:
 # the install.sh on each branch downloads the binaries of that branch
-BRANCH="feat/streaming"
+BRANCH="develop"
 BIN_DIR="$HOME/.local/bin"
 CONFIG_DIR="$HOME/.depozit"
 DEFAULT_STORAGE_DIR="$HOME/.depozit/storage"
