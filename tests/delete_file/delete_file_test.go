@@ -1,43 +1,52 @@
 package delete_file
 
 import (
-	"depozit-server/src/resources"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"depozit-server/src/config"
+	. "depozit-server/tests/testutil"
 )
 
+func TestMain(m *testing.M) {
+	config.SetupLogger()
+
+	os.Exit(m.Run())
+}
+
 func TestDeleteFile(t *testing.T) {
-	root := SetupRoot(t)
+	root, store := SetupStore(t)
 
-	// Paths must resolve against the root, not the process working directory
-	t.Chdir(t.TempDir())
+	require.NoError(t, Upload(store, "test-delete.txt", []byte("test"), false))
 
-	require.NoError(t, root.WriteFile("default/test-delete.txt", []byte("test"), 0600))
+	require.NoError(t, store.Delete(Container, "test-delete.txt"))
 
-	_, err := resources.DeleteFile(root, container, "test-delete.txt")
-	require.NoError(t, err)
-
-	_, err = root.Stat("default/test-delete.txt")
+	_, err := root.Stat("default/test-delete.txt")
 	assert.Error(t, err)
 }
 
 func TestDeleteMissingFile(t *testing.T) {
-	root := SetupRoot(t)
+	_, store := SetupStore(t)
 
-	_, err := resources.DeleteFile(root, container, "missing.txt")
+	assert.NoError(t, store.Delete(Container, "missing.txt"))
+}
 
-	assert.NoError(t, err)
+func TestDeleteFileContainerNotFound(t *testing.T) {
+	_, store := SetupStore(t)
+
+	assert.Equal(t, codes.NotFound, status.Code(store.Delete("missing", "test.txt")))
 }
 
 func TestDeleteFileInvalidPath(t *testing.T) {
-	root := SetupRoot(t)
+	_, store := SetupStore(t)
 
-	for _, path := range []string{"../x", "/etc/passwd", ""} {
-		_, err := resources.DeleteFile(root, container, path)
+	for _, path := range []string{"../x", "/etc/passwd", "", "."} {
+		err := store.Delete(Container, path)
 		assert.Equal(t, codes.InvalidArgument, status.Code(err), path)
 	}
 }

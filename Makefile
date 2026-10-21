@@ -1,19 +1,36 @@
 GOBIN := $(shell go env GOPATH)/bin
 PATH := $(PATH):$(GOBIN)
 
-.PHONY: protobufs compile install install-dev start test coverage
+# Binaries committed to the repo, downloaded by install.sh
+DIST := dist
+
+# Same source and Go version give the same bytes, so an unchanged build leaves dist/ unchanged.
+# -buildvcs=false matters: the embedded commit hash would change the binaries on every commit
+GO_BUILD := CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags="-s -w -buildid="
+
+.PHONY: protobufs build hooks install install-dev start test coverage
 
 protobufs:
 	@protoc --go_out=./src --go-grpc_out=./src src/protobufs/files.proto
 
-compile:
-	@go build -o depozit-server ./src
+build:
+	@mkdir -p $(DIST)
+	@GOOS=linux GOARCH=amd64 $(GO_BUILD) -o $(DIST)/depozit-server-linux-amd64 ./src
+	@GOOS=linux GOARCH=arm64 $(GO_BUILD) -o $(DIST)/depozit-server-linux-arm64 ./src
+	@# Paths relative to the repo root, the same paths install.sh downloads. The depozit script is
+	@# installed straight from scripts/, its sum lives here so one file covers everything installed
+	@sha256sum $(DIST)/depozit-server-linux-amd64 $(DIST)/depozit-server-linux-arm64 scripts/depozit > $(DIST)/sha256sums.txt
+
+# Git does not version hooks, point it at the ones in the repo
+hooks:
+	@git config core.hooksPath .githooks
+	@echo "Git hooks enabled from .githooks/"
 
 install:
 	@if [ -f "$(HOME)/.local/bin/depozit-server" ]; then \
 		echo "Depozit is already installed. Run 'depozit uninstall' first."; \
 	else \
-		$(MAKE) --no-print-directory compile && bash install.sh; \
+		$(MAKE) --no-print-directory build && bash install.sh; \
 	fi
 
 install-dev:

@@ -171,8 +171,12 @@ func (x *ReadDeleteRequest) GetRemotePath() string {
 }
 
 type ListRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Prefix        string                 `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Prefix string                 `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	// Default 1000, max 10000
+	PageSize int32 `protobuf:"varint,2,opt,name=pageSize,proto3" json:"pageSize,omitempty"`
+	// nextPageToken from the previous response, empty for the first page
+	PageToken     string `protobuf:"bytes,3,opt,name=pageToken,proto3" json:"pageToken,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -214,9 +218,25 @@ func (x *ListRequest) GetPrefix() string {
 	return ""
 }
 
+func (x *ListRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
 type ListResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RemotePaths   []string               `protobuf:"bytes,1,rep,name=remotePaths,proto3" json:"remotePaths,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	RemotePaths []string               `protobuf:"bytes,1,rep,name=remotePaths,proto3" json:"remotePaths,omitempty"`
+	// Empty when there are no more files
+	NextPageToken string `protobuf:"bytes,2,opt,name=nextPageToken,proto3" json:"nextPageToken,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -258,6 +278,14 @@ func (x *ListResponse) GetRemotePaths() []string {
 	return nil
 }
 
+func (x *ListResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// For Rename, newName is a file name in the same directory. For RenameContainer, remotePath is the old container name
 type RenameRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RemotePath    string                 `protobuf:"bytes,1,opt,name=remotePath,proto3" json:"remotePath,omitempty"`
@@ -370,21 +398,25 @@ const file_src_protobufs_files_proto_rawDesc = "" +
 	"\x11ReadDeleteRequest\x12\x1e\n" +
 	"\n" +
 	"remotePath\x18\x01 \x01(\tR\n" +
-	"remotePath\"%\n" +
+	"remotePath\"_\n" +
 	"\vListRequest\x12\x16\n" +
-	"\x06prefix\x18\x01 \x01(\tR\x06prefix\"0\n" +
+	"\x06prefix\x18\x01 \x01(\tR\x06prefix\x12\x1a\n" +
+	"\bpageSize\x18\x02 \x01(\x05R\bpageSize\x12\x1c\n" +
+	"\tpageToken\x18\x03 \x01(\tR\tpageToken\"V\n" +
 	"\fListResponse\x12 \n" +
-	"\vremotePaths\x18\x01 \x03(\tR\vremotePaths\"I\n" +
+	"\vremotePaths\x18\x01 \x03(\tR\vremotePaths\x12$\n" +
+	"\rnextPageToken\x18\x02 \x01(\tR\rnextPageToken\"I\n" +
 	"\rRenameRequest\x12\x1e\n" +
 	"\n" +
 	"remotePath\x18\x01 \x01(\tR\n" +
 	"remotePath\x12\x18\n" +
 	"\anewName\x18\x02 \x01(\tR\anewName\"&\n" +
 	"\x10ContainerRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name2\x87\x04\n" +
-	"\fFilesService\x12D\n" +
-	"\fUploadBinary\x12\x1a.files.UploadBinaryRequest\x1a\x16.google.protobuf.Empty\"\x00\x127\n" +
-	"\x04Read\x12\x18.files.ReadDeleteRequest\x1a\x13.files.ReadResponse\"\x00\x12<\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name2\x91\x04\n" +
+	"\fFilesService\x12F\n" +
+	"\fUploadStream\x12\x1a.files.UploadBinaryRequest\x1a\x16.google.protobuf.Empty\"\x00(\x01\x12?\n" +
+	"\n" +
+	"ReadStream\x12\x18.files.ReadDeleteRequest\x1a\x13.files.ReadResponse\"\x000\x01\x12<\n" +
 	"\x06Delete\x12\x18.files.ReadDeleteRequest\x1a\x16.google.protobuf.Empty\"\x00\x121\n" +
 	"\x04List\x12\x12.files.ListRequest\x1a\x13.files.ListResponse\"\x00\x128\n" +
 	"\x06Rename\x12\x14.files.RenameRequest\x1a\x16.google.protobuf.Empty\"\x00\x12D\n" +
@@ -416,16 +448,16 @@ var file_src_protobufs_files_proto_goTypes = []any{
 	(*emptypb.Empty)(nil),       // 7: google.protobuf.Empty
 }
 var file_src_protobufs_files_proto_depIdxs = []int32{
-	0, // 0: files.FilesService.UploadBinary:input_type -> files.UploadBinaryRequest
-	2, // 1: files.FilesService.Read:input_type -> files.ReadDeleteRequest
+	0, // 0: files.FilesService.UploadStream:input_type -> files.UploadBinaryRequest
+	2, // 1: files.FilesService.ReadStream:input_type -> files.ReadDeleteRequest
 	2, // 2: files.FilesService.Delete:input_type -> files.ReadDeleteRequest
 	3, // 3: files.FilesService.List:input_type -> files.ListRequest
 	5, // 4: files.FilesService.Rename:input_type -> files.RenameRequest
 	6, // 5: files.FilesService.CreateContainer:input_type -> files.ContainerRequest
 	5, // 6: files.FilesService.RenameContainer:input_type -> files.RenameRequest
 	6, // 7: files.FilesService.DeleteContainer:input_type -> files.ContainerRequest
-	7, // 8: files.FilesService.UploadBinary:output_type -> google.protobuf.Empty
-	1, // 9: files.FilesService.Read:output_type -> files.ReadResponse
+	7, // 8: files.FilesService.UploadStream:output_type -> google.protobuf.Empty
+	1, // 9: files.FilesService.ReadStream:output_type -> files.ReadResponse
 	7, // 10: files.FilesService.Delete:output_type -> google.protobuf.Empty
 	4, // 11: files.FilesService.List:output_type -> files.ListResponse
 	7, // 12: files.FilesService.Rename:output_type -> google.protobuf.Empty

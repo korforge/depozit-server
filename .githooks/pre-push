@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Rebuilds dist/ and points install.sh at the pushed branch, then commits both when they changed,
+# so the install.sh on each branch downloads binaries that match that branch. Git picks the
+# commits to push before this hook runs, so a new commit is not part of the current push: the
+# hook stops it and asks to push again.
+# Enable with: make hooks
+
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+# Build from committed code only, uncommitted edits would end up in the binaries.
+# install.sh too, the commit below would take its uncommitted edits with it
+if ! git diff --quiet HEAD -- src go.mod go.sum scripts install.sh ||
+    [ -n "$(git ls-files --others --exclude-standard -- src scripts)" ]; then
+    echo "pre-push: commit or stash the changes in src/, scripts/, install.sh, go.mod and go.sum first," >&2
+    echo "so the pushed files match the pushed code." >&2
+    exit 1
+fi
+
+# Git passes one line per pushed ref: <local ref> <local sha> <remote ref> <remote sha>.
+# Take the remote branch the current branch is pushed to, which may have another name
+current="$(git symbolic-ref -q HEAD || true)"
+branch=""
+
+while read -r local_ref _ remote_ref _; do
+    if [ "$local_ref" = "$current" ] && [[ "$remote_ref" == refs/heads/* ]]; then
+        branch="${remote_ref#refs/heads/}"
+    fi
+done
+
+if [ -n "$branch" ]; then
+    sed -i "s|^BRANCH=.*|BRANCH=\"$branch\"|" install.sh
+fi
+
+make --no-print-directory build
+
+if [ -z "$(git status --porcelain -- dist install.sh)" ]; then
+    exit 0
+fi
+
+git add dist install.sh
+
+# Commit only these paths, never other staged changes
+git commit --quiet -m "build: update dist binaries for $branch" -- dist install.sh
+
+echo "pre-push: committed the rebuilt binaries and install.sh for $branch. Run git push again to include them." >&2
+exit 1

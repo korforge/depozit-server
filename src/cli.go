@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 
@@ -20,6 +21,11 @@ func CliLoadConfig() *config.Config {
 
 	if err != nil {
 		fmt.Printf("Warning: could not load %s: %v\n", *envPath, err)
+	}
+
+	if err := loadKeysFile(); err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
 	}
 
 	cfg, errs := ConfigFromEnv()
@@ -48,7 +54,7 @@ func ConfigFromEnv() (*config.Config, []string) {
 	var errs []string
 
 	if host == "" {
-		host = "0.0.0.0"
+		host = "127.0.0.1"
 	}
 
 	portNumber, err := strconv.Atoi(port)
@@ -77,9 +83,83 @@ func ConfigFromEnv() (*config.Config, []string) {
 		}
 	}
 
+	maxFileSize, err := envInt("MAX_FILE_SIZE", 0)
+
+	if err != nil || maxFileSize < 0 {
+		errs = append(errs, "MAX_FILE_SIZE must be a number of bytes, 0 for no limit")
+	}
+
+	tlsCert := os.Getenv("TLS_CERT")
+	tlsKey := os.Getenv("TLS_KEY")
+
+	if (tlsCert == "") != (tlsKey == "") {
+		errs = append(errs, "TLS_CERT and TLS_KEY must be set together, or both left empty to run without TLS")
+	}
+
+	maxConcurrentStreams, err := envInt("MAX_CONCURRENT_STREAMS", 100)
+
+	if err != nil || maxConcurrentStreams < 1 || maxConcurrentStreams > math.MaxUint32 {
+		errs = append(errs, "MAX_CONCURRENT_STREAMS must be a positive number")
+	}
+
 	if len(errs) > 0 {
 		return nil, errs
 	}
 
-	return config.LoadConfig(host, port, apiKey, storagePath, encryptionKey), nil
+	cfg := config.LoadConfig(host, port, apiKey, storagePath, encryptionKey)
+
+	cfg.MaxFileSize = maxFileSize
+	cfg.MaxConcurrentStreams = uint32(maxConcurrentStreams)
+	cfg.TLSCert = tlsCert
+	cfg.TLSKey = tlsKey
+
+	return cfg, nil
+}
+
+// Loads the secrets from the file named by KEYS_FILE, so they live apart from the config.
+// Like ssh with private keys, it refuses a file that other users can read
+func loadKeysFile() error {
+	path := os.Getenv("KEYS_FILE")
+
+	if path == "" {
+		return nil
+	}
+
+	info, err := os.Stat(path)
+
+	if err != nil {
+		return fmt.Errorf("KEYS_FILE: %v", err)
+	}
+
+	if info.Mode().Perm()&0077 != 0 {
+		return fmt.Errorf("KEYS_FILE %s is readable by other users, run: chmod 600 %s", path, path)
+	}
+
+	keys, err := godotenv.Read(path)
+
+	if err != nil {
+		return fmt.Errorf("KEYS_FILE: %v", err)
+	}
+
+	for name, value := range keys {
+		// A key in both files is ambiguous, and one of them is likely stale
+		if os.Getenv(name) != "" {
+			return fmt.Errorf("%s is set in both KEYS_FILE and the environment, keep it only in %s", name, path)
+		}
+
+		os.Setenv(name, value)
+	}
+
+	return nil
+}
+
+// Reads an optional integer variable
+func envInt(name string, fallback int64) (int64, error) {
+	value := os.Getenv(name)
+
+	if value == "" {
+		return fallback, nil
+	}
+
+	return strconv.ParseInt(value, 10, 64)
 }

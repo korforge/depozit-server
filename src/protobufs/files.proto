@@ -9,9 +9,9 @@ import "google/protobuf/empty.proto";
 
 service FilesService {
 
-   rpc UploadBinary(UploadBinaryRequest) returns (google.protobuf.Empty) {}
+   rpc UploadStream(stream UploadBinaryRequest) returns (google.protobuf.Empty) {}
 
-   rpc Read(ReadDeleteRequest) returns (ReadResponse) {}
+   rpc ReadStream(ReadDeleteRequest) returns (stream ReadResponse) {}
 
    rpc Delete(ReadDeleteRequest) returns (google.protobuf.Empty) {}
 
@@ -42,13 +42,20 @@ message ReadDeleteRequest {
 
 message ListRequest {
   string prefix = 1;
+  // Default 1000, max 10000
+  int32 pageSize = 2;
+  // nextPageToken from the previous response, empty for the first page
+  string pageToken = 3;
 }
 
 message ListResponse {
   repeated string remotePaths = 1;
+  // Empty when there are no more files
+  string nextPageToken = 2;
 }
 
 
+// For Rename, newName is a file name in the same directory. For RenameContainer, remotePath is the old container name
 message RenameRequest {
   string remotePath = 1;
   string newName = 2;

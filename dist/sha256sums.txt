@@ -1,0 +1,3 @@
+d86ff78a9c132f2e606cf74e9b0aa62119f8575f49e38c0831692d7d3618f6df  dist/depozit-server-linux-amd64
+03d5baab0fa818de37eaf82bd11e4b492c572dd3ba80376de3f9f2d24cca62af  dist/depozit-server-linux-arm64
+dfe96ffea27c1a691a5add8802f60eec79106399e2d4a5410885800966a4838b  scripts/depozit

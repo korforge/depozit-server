@@ -20,8 +20,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FilesService_UploadBinary_FullMethodName    = "/files.FilesService/UploadBinary"
-	FilesService_Read_FullMethodName            = "/files.FilesService/Read"
+	FilesService_UploadStream_FullMethodName    = "/files.FilesService/UploadStream"
+	FilesService_ReadStream_FullMethodName      = "/files.FilesService/ReadStream"
 	FilesService_Delete_FullMethodName          = "/files.FilesService/Delete"
 	FilesService_List_FullMethodName            = "/files.FilesService/List"
 	FilesService_Rename_FullMethodName          = "/files.FilesService/Rename"
@@ -34,8 +34,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FilesServiceClient interface {
-	UploadBinary(ctx context.Context, in *UploadBinaryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Read(ctx context.Context, in *ReadDeleteRequest, opts ...grpc.CallOption) (*ReadResponse, error)
+	UploadStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[UploadBinaryRequest, emptypb.Empty], error)
+	ReadStream(ctx context.Context, in *ReadDeleteRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ReadResponse], error)
 	Delete(ctx context.Context, in *ReadDeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 	Rename(ctx context.Context, in *RenameRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -52,25 +52,37 @@ func NewFilesServiceClient(cc grpc.ClientConnInterface) FilesServiceClient {
 	return &filesServiceClient{cc}
 }
 
-func (c *filesServiceClient) UploadBinary(ctx context.Context, in *UploadBinaryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *filesServiceClient) UploadStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[UploadBinaryRequest, emptypb.Empty], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, FilesService_UploadBinary_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &FilesService_ServiceDesc.Streams[0], FilesService_UploadStream_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[UploadBinaryRequest, emptypb.Empty]{ClientStream: stream}
+	return x, nil
 }
 
-func (c *filesServiceClient) Read(ctx context.Context, in *ReadDeleteRequest, opts ...grpc.CallOption) (*ReadResponse, error) {
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FilesService_UploadStreamClient = grpc.ClientStreamingClient[UploadBinaryRequest, emptypb.Empty]
+
+func (c *filesServiceClient) ReadStream(ctx context.Context, in *ReadDeleteRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ReadResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReadResponse)
-	err := c.cc.Invoke(ctx, FilesService_Read_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &FilesService_ServiceDesc.Streams[1], FilesService_ReadStream_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[ReadDeleteRequest, ReadResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FilesService_ReadStreamClient = grpc.ServerStreamingClient[ReadResponse]
 
 func (c *filesServiceClient) Delete(ctx context.Context, in *ReadDeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -136,8 +148,8 @@ func (c *filesServiceClient) DeleteContainer(ctx context.Context, in *ContainerR
 // All implementations must embed UnimplementedFilesServiceServer
 // for forward compatibility.
 type FilesServiceServer interface {
-	UploadBinary(context.Context, *UploadBinaryRequest) (*emptypb.Empty, error)
-	Read(context.Context, *ReadDeleteRequest) (*ReadResponse, error)
+	UploadStream(grpc.ClientStreamingServer[UploadBinaryRequest, emptypb.Empty]) error
+	ReadStream(*ReadDeleteRequest, grpc.ServerStreamingServer[ReadResponse]) error
 	Delete(context.Context, *ReadDeleteRequest) (*emptypb.Empty, error)
 	List(context.Context, *ListRequest) (*ListResponse, error)
 	Rename(context.Context, *RenameRequest) (*emptypb.Empty, error)
@@ -154,11 +166,11 @@ type FilesServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedFilesServiceServer struct{}
 
-func (UnimplementedFilesServiceServer) UploadBinary(context.Context, *UploadBinaryRequest) (*emptypb.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method UploadBinary not implemented")
+func (UnimplementedFilesServiceServer) UploadStream(grpc.ClientStreamingServer[UploadBinaryRequest, emptypb.Empty]) error {
+	return status.Error(codes.Unimplemented, "method UploadStream not implemented")
 }
-func (UnimplementedFilesServiceServer) Read(context.Context, *ReadDeleteRequest) (*ReadResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Read not implemented")
+func (UnimplementedFilesServiceServer) ReadStream(*ReadDeleteRequest, grpc.ServerStreamingServer[ReadResponse]) error {
+	return status.Error(codes.Unimplemented, "method ReadStream not implemented")
 }
 func (UnimplementedFilesServiceServer) Delete(context.Context, *ReadDeleteRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
@@ -199,41 +211,23 @@ func RegisterFilesServiceServer(s grpc.ServiceRegistrar, srv FilesServiceServer)
 	s.RegisterService(&FilesService_ServiceDesc, srv)
 }
 
-func _FilesService_UploadBinary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UploadBinaryRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FilesServiceServer).UploadBinary(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: FilesService_UploadBinary_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FilesServiceServer).UploadBinary(ctx, req.(*UploadBinaryRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+func _FilesService_UploadStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(FilesServiceServer).UploadStream(&grpc.GenericServerStream[UploadBinaryRequest, emptypb.Empty]{ServerStream: stream})
 }
 
-func _FilesService_Read_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReadDeleteRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FilesService_UploadStreamServer = grpc.ClientStreamingServer[UploadBinaryRequest, emptypb.Empty]
+
+func _FilesService_ReadStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ReadDeleteRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(FilesServiceServer).Read(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: FilesService_Read_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FilesServiceServer).Read(ctx, req.(*ReadDeleteRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(FilesServiceServer).ReadStream(m, &grpc.GenericServerStream[ReadDeleteRequest, ReadResponse]{ServerStream: stream})
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FilesService_ReadStreamServer = grpc.ServerStreamingServer[ReadResponse]
 
 func _FilesService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReadDeleteRequest)
@@ -351,14 +345,6 @@ var FilesService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*FilesServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "UploadBinary",
-			Handler:    _FilesService_UploadBinary_Handler,
-		},
-		{
-			MethodName: "Read",
-			Handler:    _FilesService_Read_Handler,
-		},
-		{
 			MethodName: "Delete",
 			Handler:    _FilesService_Delete_Handler,
 		},
@@ -383,6 +369,17 @@ var FilesService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FilesService_DeleteContainer_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "UploadStream",
+			Handler:       _FilesService_UploadStream_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "ReadStream",
+			Handler:       _FilesService_ReadStream_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "src/protobufs/files.proto",
 }

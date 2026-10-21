@@ -4,11 +4,14 @@
 
 CONFIG_DIR="$HOME/.depozit"
 ENV_FILE="$CONFIG_DIR/.env"
+# The only keys file uninstall may delete. A KEYS_FILE elsewhere belongs to the user
+DEFAULT_KEYS_FILE="$CONFIG_DIR/keys.env"
 SERVICE_NAME="depozit"
 BIN_DIR="$HOME/.local/bin"
 
+# Reads KEY from the config, or from the file given as $2
 _read_env() {
-    grep "^${1}=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2-
+    grep "^${1}=" "${2:-$ENV_FILE}" 2>/dev/null | cut -d'=' -f2-
 }
 
 case "$1" in
@@ -38,9 +41,11 @@ case "$1" in
         fi
         PORT=$(_read_env PORT)
         STORAGE=$(_read_env STORAGE_PATH)
+        KEYS_FILE=$(_read_env KEYS_FILE)
         echo "Service: $STATUS"
         echo "Port:    ${PORT:-not configured}"
         echo "Storage: ${STORAGE:-not configured}"
+        echo "Keys:    ${KEYS_FILE:-$ENV_FILE}"
         ;;
 
     uninstall)
@@ -50,9 +55,18 @@ case "$1" in
         fi
 
         STORAGE=$(_read_env STORAGE_PATH)
+        KEYS_FILE=$(_read_env KEYS_FILE)
 
-        if [ -n "$(_read_env ENCRYPTION_KEY)" ]; then
-            echo "WARNING: $ENV_FILE holds ENCRYPTION_KEY and will be deleted."
+        # Older installs keep the keys in the config itself
+        KEYS_FILE=${KEYS_FILE:-$ENV_FILE}
+
+        # Exact paths only: a pattern like $CONFIG_DIR/* also matches $CONFIG_DIR/../file and stored files
+        if [ "$KEYS_FILE" = "$DEFAULT_KEYS_FILE" ] || [ "$KEYS_FILE" = "$ENV_FILE" ]; then
+            DELETE_KEYS=1
+        fi
+
+        if [ -n "$DELETE_KEYS" ] && [ -n "$(_read_env ENCRYPTION_KEY "$KEYS_FILE")" ]; then
+            echo "WARNING: $KEYS_FILE holds ENCRYPTION_KEY and will be deleted."
             echo "Stored files cannot be decrypted without it. Back it up first."
             read -r -p "Continue? [y/N] " ANSWER
             if [ "$ANSWER" != "y" ] && [ "$ANSWER" != "Y" ]; then
@@ -70,14 +84,27 @@ case "$1" in
 
         rm -f "$BIN_DIR/depozit-server"
         rm -f "$BIN_DIR/depozit"
-        rm -rf "$CONFIG_DIR"
+
+        # Delete only the files the installer created: the default storage lives in $CONFIG_DIR too
+        rm -f "$ENV_FILE"
+
+        if [ -n "$DELETE_KEYS" ]; then
+            rm -f "$KEYS_FILE"
+        fi
+
+        # Only removed when empty, so stored files are never touched
+        rmdir "$CONFIG_DIR" 2>/dev/null || true
 
         echo ""
         echo "Depozit has been uninstalled."
         echo ""
+        if [ -z "$DELETE_KEYS" ]; then
+            echo "Your keys file was NOT removed: $KEYS_FILE"
+        fi
+
         echo "Your storage files were NOT removed."
         echo "To delete them, run:"
-        echo "  rm -rf ${STORAGE:-$HOME/.local/share/depozit}"
+        echo "  rm -rf ${STORAGE:-$CONFIG_DIR/storage}"
         ;;
 
     *)
