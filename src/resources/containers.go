@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -47,6 +48,65 @@ func CleanTempFiles(d *os.Root) error {
 
 		if err := d.RemoveAll(filepath.Join(e.Name(), TmpDir)); err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+// Removes temp files not written for maxAge, left by uploads that stopped without an error.
+// Every write updates the modification time, so a running upload keeps its temp file
+func CleanStaleTempFiles(d *os.Root, maxAge time.Duration) error {
+	entries, err := fs.ReadDir(d.FS(), ".")
+
+	if err != nil {
+		return err
+	}
+
+	cutoff := time.Now().Add(-maxAge)
+
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+
+		tmpDir := filepath.Join(e.Name(), TmpDir)
+		files, err := fs.ReadDir(d.FS(), tmpDir)
+
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+
+		if err != nil {
+			config.Logger.Error("failed to list temp files", "path", tmpDir, "error", err)
+			continue
+		}
+
+		for _, f := range files {
+			info, err := f.Info()
+
+			// The upload finished or failed since the listing
+			if errors.Is(err, fs.ErrNotExist) {
+				continue
+			}
+
+			if err != nil {
+				config.Logger.Error("failed to stat temp file", "path", tmpDir, "error", err)
+				continue
+			}
+
+			if info.ModTime().After(cutoff) {
+				continue
+			}
+
+			path := filepath.Join(tmpDir, f.Name())
+
+			if err := d.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+				config.Logger.Error("failed to delete stale temp file", "path", path, "error", err)
+				continue
+			}
+
+			config.Logger.Info("deleted stale temp file", "path", path)
 		}
 	}
 

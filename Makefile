@@ -38,9 +38,20 @@ install-dev:
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 	@sudo apt install -y protobuf-compiler
 
-start:
-	@mkdir -p data
-	@go run ./src -env test.env
+# Local config for make start: files stored in data/, keys in their own file like an install
+DEV_ENV := test.env
+DEV_KEYS := data/keys.env
+
+start: $(DEV_ENV) $(DEV_KEYS)
+	@go run ./src -env $(DEV_ENV)
+
+$(DEV_ENV):
+	@printf "PORT=5051\nSTORAGE_PATH=data\nKEYS_FILE=$(DEV_KEYS)\n" > $@
+
+# Fixed API key so local clients can hardcode it, the encryption key is random per clone
+$(DEV_KEYS):
+	@mkdir -p $(dir $@)
+	@(umask 077; { echo "ENCRYPTION_KEY=$$(openssl rand -hex 32)"; echo "ROOT_API_KEY=123456"; } > $@)
 
 test:
 	@go test -v ./...

@@ -15,7 +15,7 @@ mkdir -p ~/.depozit
 } > ~/.depozit/keys.env)
 
 curl -fsSL https://raw.githubusercontent.com/korforge/depozit-server/main/install.sh \
-  | bash -s -- --port 50051 --keys-file ~/.depozit/keys.env
+  | bash -s -- --max-file-size 100MB --port 50051 --keys-file ~/.depozit/keys.env
 ```
 
 | Option | Description |
@@ -24,6 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/korforge/depozit-server/main/instal
 | `--port PORT` | gRPC port (default `50051`) |
 | `--storage DIR` | Directory where files are stored (default `~/.depozit/storage`) |
 | `--keys-file FILE` | Keys file (default `~/.depozit/keys.env`). Generated when it does not exist, used as is when it does |
+| `--max-file-size SIZE` | Largest upload, in bytes or in MB with an `MB` suffix, for example `500MB`, or `0` for no limit (default `100MB`). Saved as `MAX_FILE_SIZE` in the config |
 
 The script URL picks the branch: `.../feat/streaming/install.sh` installs the binaries of `feat/streaming`. A piped script cannot see its own URL, so the pre-push hook writes the pushed branch into `BRANCH` in `install.sh` (see [Development](#development)).
 
@@ -33,6 +34,15 @@ To install a specific version, download that tag from GitHub and run the install
 curl -fsSL https://github.com/korforge/depozit-server/archive/refs/tags/v1.0.0.tar.gz | tar xz
 bash depozit-server-1.0.0/install.sh --port 50051
 ```
+
+Uploads are limited to 100 MB by default. To raise the limit to 500 MB:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/korforge/depozit-server/main/install.sh \
+  | bash -s -- --port 50051 --max-file-size 500MB
+```
+
+To change the limit later, run the installer again with a new `--max-file-size`, or edit `MAX_FILE_SIZE` in `~/.depozit/.env` and restart with `depozit stop && depozit start`.
 
 For deploys, prefer a tag: `main` moves, so the same curl command can install different code later.
 
@@ -146,7 +156,7 @@ cat ~/.depozit/.env
 | `KEYS_FILE` | Path to the keys file with `ROOT_API_KEY` and `ENCRYPTION_KEY`. Must not be readable by other users |
 | `STORAGE_PATH`  | Directory where files are stored   |
 | `TLS_CERT`, `TLS_KEY` | Paths to a PEM certificate and its key. Set both to serve over TLS, or neither to run without TLS. Without them the API key and files travel in plaintext, and the server logs a warning on a non-loopback `HOST` |
-| `MAX_FILE_SIZE` | Largest upload in bytes (default `0`, no limit) |
+| `MAX_FILE_SIZE` | Largest upload, in bytes or in MB with an `MB` suffix, for example `100MB` (1 MB = 1048576 bytes). `0` means no limit. Default `100MB`. The `-max_file_size` flag of `depozit-server` overrides it, for example `depozit-server -env .env -max_file_size 500MB` |
 | `MAX_CONCURRENT_STREAMS` | Concurrent RPCs per connection (default `100`) |
 
 Each container is a directory inside `STORAGE_PATH`. The `default` container is created on startup and is used when a request does not set `container`.

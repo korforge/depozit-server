@@ -37,6 +37,9 @@ Options:
   --storage DIR       Directory where files are stored (default $DEFAULT_STORAGE_DIR)
   --keys-file FILE    File with ROOT_API_KEY and ENCRYPTION_KEY (default $DEFAULT_KEYS_FILE).
                       Generated with mode 600 when it does not exist, used as is when it does
+  --max-file-size SIZE
+                      Largest upload, in bytes or in MB with an MB suffix (100MB).
+                      0 for no limit (default 100MB)
   -h, --help          Show this help
 
 Never pass ROOT_API_KEY or ENCRYPTION_KEY as arguments: they would show up in ps and
@@ -139,6 +142,7 @@ _write_config() {
     [ -n "$HOST_ARG" ] && _set_env HOST "$HOST_ARG"
     [ -n "$PORT_ARG" ] && _set_env PORT "$PORT_ARG"
     [ -n "$STORAGE_ARG" ] && _set_env STORAGE_PATH "$(realpath -m "$STORAGE_ARG")"
+    [ -n "$MAX_FILE_SIZE_ARG" ] && _set_env MAX_FILE_SIZE "$MAX_FILE_SIZE_ARG"
 
     if [ -z "$(_read_env PORT)" ]; then
         _set_env PORT 50051
@@ -224,6 +228,7 @@ install() {
             --port) PORT_ARG="$2"; shift 2 ;;
             --storage) STORAGE_ARG="$2"; shift 2 ;;
             --keys-file) KEYS_FILE_ARG="$2"; shift 2 ;;
+            --max-file-size) MAX_FILE_SIZE_ARG="$2"; shift 2 ;;
             -h | --help) usage; exit 0 ;;
             *) usage; _fail "unknown option $1" ;;
         esac
@@ -231,6 +236,11 @@ install() {
 
     if [ -n "$PORT_ARG" ] && ! { [[ "$PORT_ARG" =~ ^[0-9]+$ ]] && [ "$PORT_ARG" -ge 1 ] && [ "$PORT_ARG" -le 65535 ]; }; then
         _fail "--port must be a number between 1 and 65535"
+    fi
+
+    # Same format the server accepts, so a bad value fails here instead of at service start
+    if [ -n "$MAX_FILE_SIZE_ARG" ] && ! [[ "$MAX_FILE_SIZE_ARG" =~ ^[0-9]+([mM][bB])?$ ]]; then
+        _fail "--max-file-size must be a number of bytes, or of MB with an MB suffix (100MB)"
     fi
 
     command -v openssl >/dev/null || _fail "openssl is required"
@@ -291,9 +301,12 @@ EOF
     # Add ~/.local/bin to PATH in shell rc files if not already present
     _ensure_path
 
-    local tls_cert host
+    local tls_cert host max_file_size
     tls_cert="$(_read_env TLS_CERT)"
     host="$(_read_env HOST)"
+    max_file_size="$(_read_env MAX_FILE_SIZE)"
+    [ -z "$max_file_size" ] && max_file_size="100MB"
+    [[ "$max_file_size" =~ ^0+([mM][bB])?$ ]] && max_file_size="no limit"
 
     echo ""
     echo "--- Installation Complete ---"
@@ -314,6 +327,7 @@ EOF
     echo "Config:       $ENV_FILE"
     echo "Keys:         $keys_file"
     echo "TLS:          ${tls_cert:-disabled}"
+    echo "Max file size: $max_file_size"
     echo ""
 
     # TLS is set up by hand in the config, see "TLS" in the README

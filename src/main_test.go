@@ -41,6 +41,7 @@ func TestConfigFromEnv(t *testing.T) {
 	assert.Equal(t, "127.0.0.1", cfg.Host)
 	assert.Equal(t, "5051", cfg.Port)
 	assert.Len(t, cfg.EncryptionKey, 32)
+	assert.Equal(t, int64(100<<20), cfg.MaxFileSize)
 }
 
 func TestConfigFromEnvShortKey(t *testing.T) {
@@ -95,6 +96,29 @@ func TestConfigFromEnvInvalidOptional(t *testing.T) {
 	_, errs := ConfigFromEnv()
 
 	assert.Len(t, errs, 3)
+}
+
+func TestConfigFromEnvMaxFileSizeMB(t *testing.T) {
+	for value, want := range map[string]int64{"100MB": 100 << 20, "5mb": 5 << 20, "2 MB": 2 << 20, "0MB": 0} {
+		setEnv(t, "5051", "123456", "/data", validKey)
+		t.Setenv("MAX_FILE_SIZE", value)
+
+		cfg, errs := ConfigFromEnv()
+
+		require.Empty(t, errs, value)
+		assert.Equal(t, want, cfg.MaxFileSize, value)
+	}
+}
+
+func TestConfigFromEnvInvalidMaxFileSize(t *testing.T) {
+	for _, value := range []string{"MB", "-1MB", "1.5MB", "10GB", "9999999999999MB"} {
+		setEnv(t, "5051", "123456", "/data", validKey)
+		t.Setenv("MAX_FILE_SIZE", value)
+
+		_, errs := ConfigFromEnv()
+
+		assert.Len(t, errs, 1, value)
+	}
 }
 
 func writeKeysFile(t *testing.T, mode os.FileMode) string {

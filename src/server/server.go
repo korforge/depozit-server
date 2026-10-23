@@ -28,6 +28,13 @@ const maxRecvMsgSize = 4 * 1024 * 1024
 // How long shutdown waits for open streams before it closes them
 const shutdownTimeout = 30 * time.Second
 
+// How often the server looks for temp files of interrupted uploads
+const staleTempFileInterval = 10 * time.Minute
+
+// Temp files not written for this long are deleted. Much longer than the keepalive timeout,
+// so only uploads that stopped sending data lose their temp file
+const staleTempFileAge = time.Hour
+
 func newGrpcServer(cfg *config.Config) (*grpc.Server, error) {
 	options := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(LoggingInterceptor(), AuthInterceptor(cfg)),
@@ -81,6 +88,23 @@ func newServer(cfg *config.Config, rootDir *os.Root) (*Server, error) {
 	return &Server{cfg: cfg, rootDir: rootDir, cipher: cipher}, nil
 }
 
+// Deletes temp files of uploads that stopped sending data until ctx is done
+func cleanStaleTempFiles(ctx context.Context, rootDir *os.Root) {
+	ticker := time.NewTicker(staleTempFileInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := resources.CleanStaleTempFiles(rootDir, staleTempFileAge); err != nil {
+				config.Logger.Error("failed to clean stale temp files", "error", err)
+			}
+		}
+	}
+}
+
 func RunServer(cfg *config.Config) {
 	addr := net.JoinHostPort(cfg.Host, cfg.Port)
 
@@ -114,21 +138,9 @@ func RunServer(cfg *config.Config) {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
-	go func() {
-		ticker := time.NewTicker(10 * time.Second)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				log.Println("Implement a go routine to remove file that had the upload interrupted")
-			}
-		}
-	}()
-
 	defer stop()
+
+	go cleanStaleTempFiles(ctx, rootDir)
 
 	go func() {
 		<-ctx.Done()

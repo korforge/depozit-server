@@ -8,12 +8,14 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
 
 func CliLoadConfig() *config.Config {
 	envPath := flag.String("env", ".env", "Path to .env file with parameters")
+	maxFileSize := flag.String("max_file_size", "", "Largest upload in bytes, or in MB with an MB suffix (100MB), 0 for no limit (default 100MB). Overrides MAX_FILE_SIZE")
 
 	flag.Parse()
 
@@ -26,6 +28,11 @@ func CliLoadConfig() *config.Config {
 	if err := loadKeysFile(); err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
+	}
+
+	// Set after the env files load, so the flag wins over them and goes through the same validation
+	if *maxFileSize != "" {
+		os.Setenv("MAX_FILE_SIZE", *maxFileSize)
 	}
 
 	cfg, errs := ConfigFromEnv()
@@ -83,10 +90,16 @@ func ConfigFromEnv() (*config.Config, []string) {
 		}
 	}
 
-	maxFileSize, err := envInt("MAX_FILE_SIZE", 0)
+	rawMaxFileSize := os.Getenv("MAX_FILE_SIZE")
+
+	if rawMaxFileSize == "" {
+		rawMaxFileSize = "100MB"
+	}
+
+	maxFileSize, err := parseSize(rawMaxFileSize)
 
 	if err != nil || maxFileSize < 0 {
-		errs = append(errs, "MAX_FILE_SIZE must be a number of bytes, 0 for no limit")
+		errs = append(errs, "MAX_FILE_SIZE must be a number of bytes, or of MB with an MB suffix (100MB), 0 for no limit")
 	}
 
 	tlsCert := os.Getenv("TLS_CERT")
@@ -151,6 +164,32 @@ func loadKeysFile() error {
 	}
 
 	return nil
+}
+
+// Parses a size in bytes, or in MB (1 MB = 1048576 bytes) when it ends in MB. Empty means 0
+func parseSize(value string) (int64, error) {
+	if value == "" {
+		return 0, nil
+	}
+
+	multiplier := int64(1)
+
+	if n, ok := strings.CutSuffix(strings.ToUpper(value), "MB"); ok {
+		value = strings.TrimSpace(n)
+		multiplier = 1 << 20
+	}
+
+	size, err := strconv.ParseInt(value, 10, 64)
+
+	if err != nil {
+		return 0, err
+	}
+
+	if size > math.MaxInt64/multiplier {
+		return 0, strconv.ErrRange
+	}
+
+	return size * multiplier, nil
 }
 
 // Reads an optional integer variable
